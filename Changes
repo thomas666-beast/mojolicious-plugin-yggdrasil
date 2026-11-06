@@ -1,0 +1,6 @@
+0.01  Initial release
+      - Connections: SQLite, MySQL/MariaDB, PostgreSQL (multiple, named, fork-safe)
+      - Query builder, Moo based models, relations (has_one/has_many/belongs_to/belongs_to_many)
+      - Eager loading, soft deletes, casts, accessors/mutators, hooks, scopes
+      - Schema builder + file based migrations with batches, rollback, pretend
+      - Mojolicious plugin with helpers and the `mimir` command
