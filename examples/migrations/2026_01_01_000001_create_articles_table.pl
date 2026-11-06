@@ -11,7 +11,7 @@ return {
       $t->text('body')->nullable;
       $t->boolean('published')->default(0);
       $t->integer('views')->default(0);
-      $t->json('meta')->nullable;
+      $t->json('settings')->nullable;
       $t->timestamps;
       $t->soft_deletes;
     });

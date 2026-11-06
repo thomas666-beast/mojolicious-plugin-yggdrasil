@@ -11,7 +11,7 @@ has commands => (is => 'ro', default => sub { [] });
 
 sub _col {
   my ($s, $type, $name, %a) = @_;
-  Carp::croak('Mimir: column name required') unless defined $name;
+  Carp::croak('Yggdrasil: column name required') unless defined $name;
   my $c = Yggdrasil::Schema::Column->new(name => $name, type => $type, attrs => {%a});
   push @{$s->columns}, $c;
   return $c;

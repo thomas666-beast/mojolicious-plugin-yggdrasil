@@ -31,8 +31,8 @@ sub _build_driver {
   my $d = $c->{driver};
   ($d) = $c->{url} =~ m{^([a-z0-9]+):}i if !$d && $c->{url};
   ($d) = $c->{dsn} =~ /^dbi:(\w+)/i     if !$d && $c->{dsn};
-  Carp::croak('Mimir: connection config needs a driver (sqlite, mysql or pg)') unless $d;
-  return $ALIAS{lc $d} // Carp::croak(qq{Mimir: unsupported driver "$d" (use sqlite, mysql or pg)});
+  Carp::croak('Yggdrasil: connection config needs a driver (sqlite, mysql or pg)') unless $d;
+  return $ALIAS{lc $d} // Carp::croak(qq{Yggdrasil: unsupported driver "$d" (use sqlite, mysql or pg)});
 }
 
 sub _build_grammar {
@@ -53,7 +53,7 @@ sub _parse_url {
     return \%p;
   }
   $url =~ m{^[a-z0-9+]+://(?:([^:@/]*)(?::([^@/]*))?@)?([^:/?#]*)(?::(\d+))?(?:/([^?#]*))?(?:\?.*)?$}i
-    or Carp::croak("Mimir: cannot parse url '$url'");
+    or Carp::croak("Yggdrasil: cannot parse url '$url'");
   my %raw = (username => $1, password => $2, host => $3, port => $4, database => $5);
   for my $k (keys %raw) {
     next unless defined $raw{$k} && length $raw{$k};
@@ -71,7 +71,7 @@ sub _connect_info {
 
   my $dsn = $c->{dsn};
   unless ($dsn) {
-    Carp::croak('Mimir: connection config needs a database') unless defined $p{database};
+    Carp::croak('Yggdrasil: connection config needs a database') unless defined $p{database};
     if ($d eq 'sqlite') { $dsn = "dbi:SQLite:dbname=$p{database}" }
     elsif ($d eq 'mysql') {
       $dsn = "dbi:mysql:database=$p{database}";
@@ -99,7 +99,7 @@ sub _connect_info {
 sub _connect {
   my $s = shift;
   my $dbh = DBI->connect($s->_connect_info)
-    or Yggdrasil::Exception->throw(message => "Mimir: cannot connect to '" . $s->name . "': " . ($DBI::errstr // 'unknown error'), type => 'connection');
+    or Yggdrasil::Exception->throw(message => "Yggdrasil: cannot connect to '" . $s->name . "': " . ($DBI::errstr // 'unknown error'), type => 'connection');
   $s->_after_connect($dbh);
   $s->_dbh($dbh);
   $s->_pid($$);
@@ -113,7 +113,7 @@ sub _after_connect {
   if ($d eq 'sqlite') {
     my %pr = (foreign_keys => 'ON', busy_timeout => 5000, %{$c->{pragmas} // {}});
     for my $k (sort keys %pr) {
-      Carp::croak("Mimir: invalid pragma '$k=$pr{$k}'") unless $k =~ /^\w+$/ && $pr{$k} =~ /^[\w.-]+$/;
+      Carp::croak("Yggdrasil: invalid pragma '$k=$pr{$k}'") unless $k =~ /^\w+$/ && $pr{$k} =~ /^[\w.-]+$/;
       $dbh->do("pragma $k = $pr{$k}");
     }
   }
@@ -122,7 +122,7 @@ sub _after_connect {
   }
   else {
     if (defined(my $sp = $c->{search_path})) {
-      Carp::croak('Mimir: invalid search_path') unless $sp =~ /^[\w,\s".\$-]+$/;
+      Carp::croak('Yggdrasil: invalid search_path') unless $sp =~ /^[\w,\s".\$-]+$/;
       $dbh->do("set search_path to $sp");
     }
     $dbh->do('set time zone ' . $dbh->quote($c->{timezone})) if $c->{timezone};
@@ -163,7 +163,7 @@ sub _log {
   my ($s, $sql, $bind, $ms) = @_;
   push @{$s->query_log}, { query => $sql, bindings => [@$bind], time => $ms } if $s->query_log;
   my $l = $s->logger or return;
-  my $msg = sprintf '[mimir:%s] %s [%s] (%.2fms)', $s->name, $sql, _fmt_bind($bind), $ms;
+  my $msg = sprintf '[yggdrasil:%s] %s [%s] (%.2fms)', $s->name, $sql, _fmt_bind($bind), $ms;
   if (ref $l eq 'CODE') { $l->($msg, $sql, $bind, $ms) }
   elsif (blessed $l && $l->can('debug')) { $l->debug($msg) }
 }
@@ -235,7 +235,7 @@ sub begin_transaction {
   my $s = shift;
   return if $s->_pretend;
   my $l = $s->_level;
-  if ($l == 0) { $s->dbh->begin_work } else { $s->statement("savepoint mimir_trans_$l") }
+  if ($l == 0) { $s->dbh->begin_work } else { $s->statement("savepoint yggdrasil_trans_$l") }
   $s->_level($l + 1);
 }
 
@@ -243,8 +243,8 @@ sub commit {
   my $s = shift;
   return if $s->_pretend;
   my $l = $s->_level - 1;
-  Carp::croak('Mimir: commit without transaction') if $l < 0;
-  if ($l == 0) { $s->dbh->commit } else { $s->statement("release savepoint mimir_trans_$l") }
+  Carp::croak('Yggdrasil: commit without transaction') if $l < 0;
+  if ($l == 0) { $s->dbh->commit } else { $s->statement("release savepoint yggdrasil_trans_$l") }
   $s->_level($l);
 }
 
@@ -253,7 +253,7 @@ sub rollback {
   return if $s->_pretend;
   my $l = $s->_level - 1;
   return if $l < 0;
-  if ($l == 0) { $s->dbh->rollback } else { $s->statement("rollback to savepoint mimir_trans_$l") }
+  if ($l == 0) { $s->dbh->rollback } else { $s->statement("rollback to savepoint yggdrasil_trans_$l") }
   $s->_level($l);
 }
 

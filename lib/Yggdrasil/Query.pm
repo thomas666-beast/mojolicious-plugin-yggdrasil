@@ -70,17 +70,17 @@ sub _where {
       $s->where($_ => $c->{$_}) for @keys;
       return $s;
     }
-    Carp::croak('Mimir: where() needs column/value, a hashref or a coderef');
+    Carp::croak('Yggdrasil: where() needs column/value, a hashref or a coderef');
   }
-  my ($col, $op, $val) = @a == 2 ? ($a[0], '=', $a[1]) : @a == 3 ? @a : Carp::croak('Mimir: where() takes 1 to 3 arguments');
-  Carp::croak('Mimir: invalid operator "' . ($op // 'undef') . '"') unless $s->grammar->valid_operator($op);
+  my ($col, $op, $val) = @a == 2 ? ($a[0], '=', $a[1]) : @a == 3 ? @a : Carp::croak('Yggdrasil: where() takes 1 to 3 arguments');
+  Carp::croak('Yggdrasil: invalid operator "' . ($op // 'undef') . '"') unless $s->grammar->valid_operator($op);
   $op = lc $op;
   if (!defined $val) {
-    Carp::croak("Mimir: operator '$op' cannot be used with undef") unless $op =~ /^(?:=|!=|<>)$/;
+    Carp::croak("Yggdrasil: operator '$op' cannot be used with undef") unless $op =~ /^(?:=|!=|<>)$/;
     return $s->_where_null($col, $bool, $op eq '=' ? 0 : 1);
   }
   if (ref $val eq 'ARRAY') {
-    Carp::croak("Mimir: operator '$op' cannot be used with an array") unless $op =~ /^(?:=|!=|<>)$/;
+    Carp::croak("Yggdrasil: operator '$op' cannot be used with an array") unless $op =~ /^(?:=|!=|<>)$/;
     return $s->_where_in($col, $val, $bool, $op eq '=' ? 0 : 1);
   }
   if (ref $val eq 'CODE') { my $q = $s->new_query; $val->($q); $val = $q }
@@ -123,7 +123,7 @@ sub or_where_not_null { $_[0]->_where_null($_[1], 'or',  1) }
 
 sub _where_between {
   my ($s, $col, $v, $bool, $not) = @_;
-  Carp::croak('Mimir: between needs [min, max]') unless ref $v eq 'ARRAY' && @$v == 2;
+  Carp::croak('Yggdrasil: between needs [min, max]') unless ref $v eq 'ARRAY' && @$v == 2;
   push @{$s->wheres}, { type => 'between', column => $col, values => $v, boolean => $bool, not => $not };
   return $s;
 }
@@ -134,7 +134,7 @@ sub where_not_between { $_[0]->_where_between($_[1], $_[2], 'and', 1) }
 sub _where_column {
   my ($s, $bool, $a, $op, $b) = @_;
   ($op, $b) = ('=', $op) unless defined $b;
-  Carp::croak("Mimir: invalid operator '$op'") unless $s->grammar->valid_operator($op);
+  Carp::croak("Yggdrasil: invalid operator '$op'") unless $s->grammar->valid_operator($op);
   push @{$s->wheres}, { type => 'column', first => $a, operator => $op, second => $b, boolean => $bool };
   return $s;
 }
@@ -167,7 +167,7 @@ sub _join {
   if    (ref $a[0] eq 'CODE') { $a[0]->($clause) }
   elsif (@a == 2)            { $clause->where_column($a[0], '=', $a[1]) }
   elsif (@a == 3)            { $clause->where_column(@a) }
-  elsif ($type ne 'cross')   { Carp::croak('Mimir: join needs a condition') }
+  elsif ($type ne 'cross')   { Carp::croak('Yggdrasil: join needs a condition') }
   push @{$s->joins}, { type => $type, table => $table, clause => $clause };
   return $s;
 }
@@ -180,7 +180,7 @@ sub group_by { my $s = shift; push @{$s->groups}, map { ref $_ eq 'ARRAY' ? @$_ 
 sub _having {
   my ($s, $bool, $col, $op, $val) = @_;
   ($op, $val) = ('=', $op) if @_ == 4;
-  Carp::croak("Mimir: invalid operator '$op'") unless $s->grammar->valid_operator($op);
+  Carp::croak("Yggdrasil: invalid operator '$op'") unless $s->grammar->valid_operator($op);
   push @{$s->havings}, { type => 'basic', column => $col, operator => lc $op, value => $val, boolean => $bool };
   return $s;
 }
@@ -191,7 +191,7 @@ sub having_raw    { my ($s, $sql, @b) = @_; push @{$s->havings}, { type => 'raw'
 sub order_by {
   my ($s, $col, $dir) = @_;
   $dir = lc($dir // 'asc');
-  Carp::croak("Mimir: invalid order direction '$dir'") unless $dir eq 'asc' || $dir eq 'desc';
+  Carp::croak("Yggdrasil: invalid order direction '$dir'") unless $dir eq 'asc' || $dir eq 'desc';
   push @{$s->orders}, { column => $col, direction => $dir };
   return $s;
 }
@@ -201,7 +201,7 @@ sub latest        { $_[0]->order_by($_[1] // 'created_at', 'desc') }
 sub oldest        { $_[0]->order_by($_[1] // 'created_at', 'asc') }
 sub reorder       { $_[0]->orders([]); $_[0] }
 
-sub _int { my $n = shift; Carp::croak("Mimir: '$n' is not a non-negative integer") unless $n =~ /^\d+$/; 0 + $n }
+sub _int { my $n = shift; Carp::croak("Yggdrasil: '$n' is not a non-negative integer") unless $n =~ /^\d+$/; 0 + $n }
 sub limit  { my ($s, $n) = @_; $s->_limit(defined $n ? _int($n) : undef); $s }
 sub offset { my ($s, $n) = @_; $s->_offset(defined $n ? _int($n) : undef); $s }
 sub take   { shift->limit(@_) }
@@ -319,7 +319,7 @@ sub _aggregate {
   if ($fn eq 'count' && (@{$s->groups} || @{$s->havings} || $s->is_distinct || defined $s->get_limit || defined $s->get_offset)) {
     my @b;
     my $inner = $g->compile_select($s->clone->reorder, \@b);
-    $row = $s->connection->select_one("select count(*) as aggregate from ($inner) as mimir_aggregate", @b);
+    $row = $s->connection->select_one("select count(*) as aggregate from ($inner) as yggdrasil_aggregate", @b);
   }
   else {
     my $q = $s->clone->reorder->select(\($fn . '(' . $g->wrap($col) . ') as aggregate'));
@@ -367,7 +367,7 @@ sub chunk {
 sub _rows_arg {
   my ($s, $d) = @_;
   my @rows = ref $d eq 'ARRAY' ? @$d : ($d);
-  Carp::croak('Mimir: nothing to insert') unless @rows;
+  Carp::croak('Yggdrasil: nothing to insert') unless @rows;
   if (my $m = $s->model) {
     @rows = map { my $r = $_; +{ map { $_ => $m->cast_for_storage($_, $r->{$_}) } keys %$r } } @rows;
   }
@@ -413,7 +413,7 @@ sub upsert {
 
 sub update {
   my ($s, $vals) = @_;
-  Carp::croak('Mimir: update() needs a hashref') unless ref $vals eq 'HASH';
+  Carp::croak('Yggdrasil: update() needs a hashref') unless ref $vals eq 'HASH';
   if (my $m = $s->model) {
     $vals = { map { $_ => (ref $vals->{$_} ? $vals->{$_} : $m->cast_for_storage($_, $vals->{$_})) } keys %$vals };
     $vals->{$m->updated_at_column} = $m->now if $m->timestamps && !exists $vals->{$m->updated_at_column};
@@ -428,7 +428,7 @@ sub decrement { my ($s, $c, $n, $x) = @_; $s->_incr('-', $c, $n, $x) }
 sub _incr {
   my ($s, $op, $col, $n, $extra) = @_;
   $n //= 1;
-  Carp::croak('Mimir: increment amount must be numeric') unless looks_like_number($n);
+  Carp::croak('Yggdrasil: increment amount must be numeric') unless looks_like_number($n);
   my $w = $s->grammar->wrap($col);
   return $s->update({ %{$extra // {}}, $col => \"$w $op $n" });
 }

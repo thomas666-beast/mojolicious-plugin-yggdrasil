@@ -12,7 +12,7 @@ has parent_key        => (is => 'ro', required => 1);
 has related_key       => (is => 'ro', required => 1);
 has pivot_columns     => (is => 'ro', default => sub { [] });
 
-my $PFX = 'mimir_pivot_';
+my $PFX = 'yggdrasil_pivot_';
 
 sub with_pivot { my $s = shift; push @{$s->pivot_columns}, @_; $s }
 
@@ -86,7 +86,7 @@ sub attach {
   my ($s, $ids, $attrs) = @_;
   my $n = $s->_normalize_ids($ids);
   my $pk = $s->parent->attributes->{$s->parent_key};
-  Carp::croak('Mimir: cannot attach on an unsaved model') unless defined $pk;
+  Carp::croak('Yggdrasil: cannot attach on an unsaved model') unless defined $pk;
   my @rows = map { +{ %{$attrs // {}}, %{$n->{$_}}, $s->foreign_pivot_key => $pk, $s->related_pivot_key => $_ } } sort keys %$n;
   $s->_pq->insert(\@rows) if @rows;
   return scalar @rows;

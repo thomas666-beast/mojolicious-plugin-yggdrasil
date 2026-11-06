@@ -34,7 +34,7 @@ plugin Yggdrasil => {
   migrations  => $dir,
 };
 
-app->mimir->migrator->run;
+app->yggdrasil->migrator->run;
 
 post '/notes' => sub ($c) {
   my $n = $c->model('Note')->create({ body => $c->param('body') });
@@ -51,9 +51,9 @@ $t->post_ok('/notes' => form => { body => 'world' })->status_is(200);
 $t->get_ok('/notes')->status_is(200)->json_is('/1/body', 'world');
 $t->get_ok('/count')->content_is('2');
 
-# the "mimir" command
-require Mojolicious::Plugin::Yggdrasil::Command::mimir;
-my $cmd = Mojolicious::Plugin::Yggdrasil::Command::mimir->new(app => app);
+# the "yggdrasil" command
+require Mojolicious::Plugin::Yggdrasil::Command::yggdrasil;
+my $cmd = Mojolicious::Plugin::Yggdrasil::Command::yggdrasil->new(app => app);
 my $out = '';
 {
   open my $h, '>', \$out or die;

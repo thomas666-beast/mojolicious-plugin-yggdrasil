@@ -3,7 +3,7 @@ use Moo;
 use Carp ();
 use JSON::PP ();
 use Scalar::Util qw(blessed);
-use Mimir;
+use Yggdrasil;
 use Yggdrasil::Query;
 use Yggdrasil::Util qw(class_basename snake_case pluralize uniq now_string);
 use Yggdrasil::Exception;
@@ -68,7 +68,7 @@ sub deleting { 1 }  sub deleted  { 1 }
 
 # ---- connection & query entry points ------------------------------------------------------
 
-sub manager { Mimir->instance // Carp::croak('Mimir is not initialised (register the plugin or call Mimir->init)') }
+sub manager { Yggdrasil->instance // Carp::croak('Yggdrasil is not initialised (register the plugin or call Yggdrasil->init)') }
 
 sub connection {
   my ($c, $name) = @_;
@@ -239,7 +239,7 @@ sub _perform_update {
   }
   my $dirty = $s->get_dirty;
   my $key = $s->get_key;
-  Carp::croak('Mimir: cannot update a model without a primary key value') unless defined $key;
+  Carp::croak('Yggdrasil: cannot update a model without a primary key value') unless defined $key;
   $s->_table_query->where($s->primary_key, $key)->update($dirty);
   $s->updated;
 }

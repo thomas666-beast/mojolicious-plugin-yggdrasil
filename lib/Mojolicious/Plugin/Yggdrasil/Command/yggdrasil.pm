@@ -1,30 +1,30 @@
-package Mojolicious::Plugin::Yggdrasil::Command::mimir;
+package Mojolicious::Plugin::Yggdrasil::Command::yggdrasil;
 use Mojo::Base 'Mojolicious::Command';
 use Getopt::Long qw(GetOptionsFromArray);
 use File::Path ();
 use File::Spec ();
 use Yggdrasil::Util qw(class_basename snake_case pluralize);
 
-has description => 'Run Mimir ORM commands (migrate, rollback, status, make:migration ...)';
+has description => 'Run Yggdrasil ORM commands (migrate, rollback, status, make:migration ...)';
 has usage       => sub { shift->extract_usage };
 
 sub run {
   my ($self, @args) = @_;
   my $cmd = shift @args // '';
-  my ($conn, $pretend, $step, $create, $table, $mig);
+  my ($conn, $pretend, $step, $create, $table, $mig, $fields);
   Getopt::Long::Configure('no_ignore_case');
   GetOptionsFromArray(\@args,
     'c|connection=s' => \$conn, 'pretend' => \$pretend, 'step:i' => \$step,
-    'create=s' => \$create, 'table=s' => \$table, 'm|migration' => \$mig,
+    'create=s' => \$create, 'table=s' => \$table, 'm|migration' => \$mig, 'f|fields=s' => \$fields,
   ) or die $self->usage;
 
-  my $mimir = $self->app->mimir;
+  my $yggdrasil = $self->app->yggdrasil;
   my $out = sub { print @_, "\n" };
   my %o = (pretend => $pretend);
   $o{step} = $step || 1 if defined $step;
 
   if ($cmd eq 'migrate') {
-    my $r = $mimir->migrator($conn)->run(%o);
+    my $r = $yggdrasil->migrator($conn)->run(%o);
     $out->($pretend ? 'Would run:' : 'Migrated:') if @$r;
     for my $m (@$r) {
       $out->("  $m->{migration}");
@@ -33,7 +33,7 @@ sub run {
     $out->('Nothing to migrate.') unless @$r;
   }
   elsif ($cmd =~ /^(?:rollback|reset)$/) {
-    my $r = $mimir->migrator($conn)->rollback(%o, ($cmd eq 'reset' ? (all => 1) : ()));
+    my $r = $yggdrasil->migrator($conn)->rollback(%o, ($cmd eq 'reset' ? (all => 1) : ()));
     $out->('Rolled back:') if @$r;
     for my $m (@$r) {
       $out->("  $m->{migration}");
@@ -42,28 +42,30 @@ sub run {
     $out->('Nothing to roll back.') unless @$r;
   }
   elsif ($cmd eq 'refresh') {
-    my $m = $mimir->migrator($conn);
+    my $m = $yggdrasil->migrator($conn);
     $m->reset;
     $out->('Migrated: ' . scalar @{$m->run}) ;
   }
   elsif ($cmd eq 'fresh') {
-    my $r = $mimir->migrator($conn)->fresh;
+    my $r = $yggdrasil->migrator($conn)->fresh;
     $out->('Dropped all tables and migrated ' . scalar(@$r) . ' migration(s).');
   }
   elsif ($cmd eq 'status') {
-    my $rows = $mimir->migrator($conn)->status;
+    my $rows = $yggdrasil->migrator($conn)->status;
     $out->(sprintf '%-5s %-6s %s', 'Ran?', 'Batch', 'Migration');
     $out->(sprintf '%-5s %-6s %s%s', $_->{ran} ? 'Yes' : 'No', $_->{batch} // '-', $_->{name}, $_->{missing} ? '  (file missing)' : '') for @$rows;
   }
   elsif ($cmd eq 'make:migration') {
-    my $name = shift @args or die "Usage: mimir make:migration NAME [--create TABLE | --table TABLE]\n";
-    my $f = $mimir->migrator($conn)->make($name, create => $create, table => $table);
+    my $name = shift @args or die "Usage: yggdrasil make:migration NAME [--create TABLE | --table TABLE]\n";
+    my $f = $yggdrasil->migrator($conn)->make($name, create => $create, table => $table, fields => $fields);
     $out->("Created $f");
   }
   elsif ($cmd eq 'make:model') {
-    my $name = shift @args or die "Usage: mimir make:model NAME [--migration]\n";
-    my $ns = $mimir->model_namespaces->[0] // 'App::Model';
+    my $name = shift @args or die "Usage: yggdrasil make:model NAME [--migration]\n";
+    my $ns = $yggdrasil->model_namespaces->[0] // 'App::Model';
     my $class = "${ns}::$name";
+    my $fill = $fields ? join(' ', map { $_->{name} } @{$yggdrasil->migrator($conn)->parse_fields($fields)}) : 'name email';
+    my $fillable = $fields ? "sub fillable { [qw($fill)] }" : "# sub fillable { [qw($fill)] }";
     my @p = split /::/, $class;
     my $file = File::Spec->catfile($self->app->home->child('lib')->to_string, @p[0 .. $#p - 1], "$p[-1].pm");
     die "$file already exists\n" if -e $file;
@@ -75,9 +77,9 @@ use Moo;
 extends 'Yggdrasil::Model';
 
 # sub table     { '${\ pluralize(snake_case($name)) }' }
-# sub fillable  { [qw(name email)] }
+$fillable
 # sub hidden    { [qw(password)] }
-# sub casts     { { is_admin => 'bool', meta => 'json' } }
+# sub casts     { { is_admin => 'bool', settings => 'json' } }
 # with 'Yggdrasil::Role::SoftDeletes';
 
 1;
@@ -86,7 +88,7 @@ EOT
     $out->("Created $file");
     if ($mig) {
       my $t = pluralize(snake_case($name));
-      $out->('Created ' . $mimir->migrator($conn)->make("create_${t}_table", create => $t));
+      $out->('Created ' . $yggdrasil->migrator($conn)->make("create_${t}_table", create => $t, fields => $fields));
     }
   }
   else { print $self->usage; return }
@@ -99,19 +101,20 @@ EOT
 
 =head1 SYNOPSIS
 
-  Usage: APPLICATION mimir COMMAND [OPTIONS]
+  Usage: APPLICATION yggdrasil COMMAND [OPTIONS]
 
-    ./myapp.pl mimir migrate                 # run pending migrations
-    ./myapp.pl mimir migrate --pretend       # show the SQL only
-    ./myapp.pl mimir migrate --step          # one batch per migration
-    ./myapp.pl mimir rollback [--step N]     # undo last batch (or last N migrations)
-    ./myapp.pl mimir reset                   # undo everything
-    ./myapp.pl mimir refresh                 # reset, then migrate
-    ./myapp.pl mimir fresh                   # drop all tables, then migrate
-    ./myapp.pl mimir status
-    ./myapp.pl mimir make:migration create_posts_table
-    ./myapp.pl mimir make:migration add_slug_to_posts_table
-    ./myapp.pl mimir make:model Post --migration
+    ./myapp.pl yggdrasil migrate                 # run pending migrations
+    ./myapp.pl yggdrasil migrate --pretend       # show the SQL only
+    ./myapp.pl yggdrasil migrate --step          # one batch per migration
+    ./myapp.pl yggdrasil rollback [--step N]     # undo last batch (or last N migrations)
+    ./myapp.pl yggdrasil reset                   # undo everything
+    ./myapp.pl yggdrasil refresh                 # reset, then migrate
+    ./myapp.pl yggdrasil fresh                   # drop all tables, then migrate
+    ./myapp.pl yggdrasil status
+    ./myapp.pl yggdrasil make:migration create_posts_table
+    ./myapp.pl yggdrasil make:migration add_slug_to_posts_table
+    ./myapp.pl yggdrasil make:model Post --migration
+    ./myapp.pl yggdrasil make:model Post -m -f "title:string,body:text?,user_id:foreign,slug:string!,views:integer=0"
 
   Options:
     -c, --connection NAME   Use another configured connection
@@ -120,5 +123,6 @@ EOT
         --create TABLE      make:migration: generate a create-table stub
         --table TABLE       make:migration: generate an alter-table stub
     -m, --migration         make:model: also generate a migration
+    -f, --fields SPEC       make:model/make:migration: e.g. "title:string,body:text?,user_id:foreign"
 
 =cut

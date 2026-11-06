@@ -23,7 +23,7 @@ sub connection {
   $name //= $s->default;
   return $s->_pool->{$name} //= do {
     my $cfg = $s->connections->{$name}
-      or Carp::croak(qq{Mimir: unknown connection "$name"});
+      or Carp::croak(qq{Yggdrasil: unknown connection "$name"});
     Yggdrasil::Connection->new(name => $name, config => $cfg, logger => $s->logger);
   };
 }
@@ -62,7 +62,7 @@ sub _resolve_model {
     if (eval { require $f; 1 }) { return $c if $c->isa('Yggdrasil::Model') }
     else { die $@ unless $@ =~ /^Can't locate \Q$f\E/ }
   }
-  Carp::croak(qq{Mimir: model "$name" not found (looked for: @cand)});
+  Carp::croak(qq{Yggdrasil: model "$name" not found (looked for: @cand)});
 }
 
 sub disconnect_all { $_->disconnect for values %{$_[0]->_pool}; return }

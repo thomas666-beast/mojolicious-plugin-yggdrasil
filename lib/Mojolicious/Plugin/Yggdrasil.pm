@@ -1,12 +1,12 @@
-package Mojolicious::Plugin::Mimir;
+package Mojolicious::Plugin::Yggdrasil;
 use Mojo::Base 'Mojolicious::Plugin';
-use Mimir;
+use Yggdrasil;
 
 our $VERSION = '0.01';
 
 sub register {
   my ($self, $app, $conf) = @_;
-  $conf = { %{$app->config->{mimir} // {}}, %{$conf // {}} };
+  $conf = { %{$app->config->{yggdrasil} // {}}, %{$conf // {}} };
 
   # one flat connection (driver/database/...) or a "connections" hash
   my $conns = $conf->{connections};
@@ -15,7 +15,7 @@ sub register {
     delete @c{qw(default models migrations migrate log connections)};
     $conns = { default => \%c } if %c;
   }
-  die "Mojolicious::Plugin::Mimir: no connection configured\n" unless $conns && %$conns;
+  die "Mojolicious::Plugin::Yggdrasil: no connection configured\n" unless $conns && %$conns;
   $conns = { map { $_ => { %{$conns->{$_}} } } keys %$conns };
 
   for my $c (values %$conns) {
@@ -44,20 +44,20 @@ sub register {
     $paths{$name} = [map { m{^(?:/|[A-Za-z]:)} ? $_ : $app->home->child($_)->to_string } (ref $p ? @$p : $p)];
   }
 
-  my $mimir = Mimir->init(
+  my $yggdrasil = Yggdrasil->init(
     connections => $conns, default => $default, model_namespaces => $models,
     migration_paths => \%paths, logger => ($conf->{log} ? $app->log : undef),
   );
 
-  $app->helper(mimir => sub { $mimir });
-  $app->helper(db    => sub { my ($c, $n) = @_; $mimir->connection($n) });
-  $app->helper(model => sub { my ($c, $n) = @_; $mimir->model($n) });
-  $app->helper(table => sub { my ($c, $t, $n) = @_; $mimir->table($t, $n) });
+  $app->helper(yggdrasil => sub { $yggdrasil });
+  $app->helper(db    => sub { my ($c, $n) = @_; $yggdrasil->connection($n) });
+  $app->helper(model => sub { my ($c, $n) = @_; $yggdrasil->model($n) });
+  $app->helper(table => sub { my ($c, $t, $n) = @_; $yggdrasil->table($t, $n) });
 
   push @{$app->commands->namespaces}, 'Mojolicious::Plugin::Yggdrasil::Command';
 
-  $mimir->migrator($default)->run if $conf->{migrate};
-  return $mimir;
+  $yggdrasil->migrator($default)->run if $conf->{migrate};
+  return $yggdrasil;
 }
 
 1;
@@ -66,12 +66,12 @@ sub register {
 
 =head1 NAME
 
-Mojolicious::Plugin::Mimir - Eloquent-style ORM, query builder and migrations for Mojolicious
+Mojolicious::Plugin::Yggdrasil - Eloquent-style ORM, query builder and migrations for Mojolicious
 
 =head1 SYNOPSIS
 
   # Mojolicious::Lite / Mojolicious
-  plugin 'Mimir' => {
+  plugin 'Yggdrasil' => {
     default     => 'main',
     connections => {
       main    => { driver => 'sqlite', database => 'db/app.db' },
@@ -85,13 +85,13 @@ Mojolicious::Plugin::Mimir - Eloquent-style ORM, query builder and migrations fo
 
   my $user  = $c->model('User')->find(1);
   my $rows  = $c->table('users')->where(active => 1)->order_by('name')->get;
-  $c->mimir->transaction(sub { ... });
+  $c->yggdrasil->transaction(sub { ... });
 
-  $ ./myapp.pl mimir migrate
+  $ ./myapp.pl yggdrasil migrate
 
 =head1 HELPERS
 
-C<mimir>, C<db>, C<model>, C<table>.
+C<yggdrasil>, C<db>, C<model>, C<table>.
 
 =head1 OPTIONS
 

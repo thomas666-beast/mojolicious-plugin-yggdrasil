@@ -11,7 +11,7 @@ has fk_name    => (is => 'rw');
 
 sub _action {
   my $a = lc shift;
-  Carp::croak("Mimir: invalid foreign key action '$a'") unless $a =~ /^(?:cascade|restrict|set null|set default|no action)$/;
+  Carp::croak("Yggdrasil: invalid foreign key action '$a'") unless $a =~ /^(?:cascade|restrict|set null|set default|no action)$/;
   return $a;
 }
 

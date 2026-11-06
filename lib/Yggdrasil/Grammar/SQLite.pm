@@ -25,8 +25,8 @@ sub type_json           { 'text' }
 sub type_uuid           { 'varchar(36)' }
 sub type_double         { 'double' }
 
-sub compile_cmd_primary      { Carp::croak('Mimir: SQLite cannot add a primary key to an existing table') }
-sub compile_cmd_foreign      { Carp::croak('Mimir: SQLite cannot add a foreign key to an existing table; declare it in create()') }
-sub compile_cmd_drop_foreign { Carp::croak('Mimir: SQLite cannot drop a foreign key') }
+sub compile_cmd_primary      { Carp::croak('Yggdrasil: SQLite cannot add a primary key to an existing table') }
+sub compile_cmd_foreign      { Carp::croak('Yggdrasil: SQLite cannot add a foreign key to an existing table; declare it in create()') }
+sub compile_cmd_drop_foreign { Carp::croak('Yggdrasil: SQLite cannot drop a foreign key') }
 
 1;

@@ -59,9 +59,9 @@ use Moo;
 extends 'Yggdrasil::Model';
 with 'Yggdrasil::Role::SoftDeletes';                 # optional
 
-sub fillable { [qw(name email password meta)] }  # mass assignment (default: everything except the primary key)
+sub fillable { [qw(name email password settings)] }  # mass assignment (default: everything except the primary key)
 sub hidden   { ['password'] }                    # left out of to_hash / JSON
-sub casts    { { is_admin => 'bool', meta => 'json', age => 'int' } }
+sub casts    { { is_admin => 'bool', settings => 'json', age => 'int' } }
 sub appends  { ['display_name'] }                # computed attributes included in to_hash
 
 sub get_display_name_attribute { $_[0]->attributes->{name} . ' <' . $_[0]->attributes->{email} . '>' }
@@ -86,7 +86,11 @@ Hooks: `saving saved creating created updating updated deleting deleted` — ove
 modifiers, or `die` to abort.
 
 Column access: `$u->name`, `$u->name('x')` (chainable), `$u->get_attribute('name')`, `$u->set_attribute(...)`,
-`$u->attributes`. Columns that collide with a method name (`count`, `first`, `table`, …) are read with `get_attribute`.
+`$u->attributes`. **Reserved names:** a column whose name matches a real method on the model is shadowed by that method, so
+`$u->meta` returns Moo's meta-class object, not your column. Affected names: Moo's `meta`, `new`, `has`, `with`, `extends`,
+`before`, `after`, `around`, `does`, plus model methods such as `table`, `count`, `first`, `save`, `delete`, `update`,
+`query`, `fill`, `attributes`, `original`, `relations`, `pivot`, `using`. Read/write those columns with
+`$u->get_attribute('meta')` / `$u->set_attribute(meta => ...)` — or pick another column name.
 
 ```perl
 my $u = User->create({ name => 'Ann', email => 'ann@x.io' });    # or User->new({...})->save
@@ -176,7 +180,7 @@ return {
       $t->text('body')->nullable;
       $t->boolean('published')->default(0);
       $t->decimal('price', 8, 2)->default(0);
-      $t->json('meta')->nullable;
+      $t->json('settings')->nullable;
       $t->string('slug')->unique;
       $t->index(['published', 'created_at']);
       $t->timestamps;
@@ -192,7 +196,9 @@ return {
 ./myapp.pl yggdrasil rollback [--step N]              # undo last batch (or last N migrations)
 ./myapp.pl yggdrasil reset | refresh | fresh | status
 ./myapp.pl yggdrasil make:migration NAME [--create TABLE | --table TABLE]
-./myapp.pl yggdrasil make:model Post [--migration]
+./myapp.pl yggdrasil make:model Post [-m] [-f FIELDS]      # model (+ migration), e.g.
+#   -f "title:string,body:text?,user_id:foreign,slug:string!,views:integer=0"
+#   ?=nullable  !=unique  =X default  foreign=foreign_id()->constrained  decimal(8,2)=arguments
 ./myapp.pl yggdrasil migrate -c reports               # any command accepts --connection
 ```
 `create_x_table` / `add_y_to_x_table` names generate the right stub. Each connection has its own migration directory
@@ -234,6 +240,6 @@ $c->db->transaction(sub {            # rolls back and rethrows on die; nested ca
 
 ```
 prove -l t/                                   # SQL generation + SQLite end-to-end (+ plugin tests if Mojolicious is installed)
-YGGDRASIL_TEST_PG='postgresql://u:p@localhost/Yggdrasil_test' YGGDRASIL_TEST_MYSQL='mysql://u:p@localhost/yggdrasil_test' prove -l t/10-orm.t
+YGGDRASIL_TEST_PG='postgresql://u:p@localhost/yggdrasil_test' YGGDRASIL_TEST_MYSQL='mysql://u:p@localhost/yggdrasil_test' prove -l t/10-orm.t
 ```
 **The PG/MySQL runs drop every table in the target database — use empty, dedicated test databases.**

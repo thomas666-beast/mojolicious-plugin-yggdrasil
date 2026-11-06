@@ -30,7 +30,7 @@ sub wrap_segment {
 sub wrap {
   my ($s, $v) = @_;
   return $$v if ref $v eq 'SCALAR';
-  Carp::croak('Mimir: invalid identifier') if !defined $v || ref $v;
+  Carp::croak('Yggdrasil: invalid identifier') if !defined $v || ref $v;
   return $s->wrap($1) . ' as ' . $s->wrap_segment($2) if $v =~ /^(.+?)\s+as\s+(.+)$/i;
   return CORE::join('.', map { $s->wrap_segment($_) } split /\./, $v);
 }
@@ -46,7 +46,7 @@ sub value {
     return $sql;
   }
   return '(' . $s->compile_select($v, $bind) . ')' if blessed $v && $v->isa('Yggdrasil::Query');
-  Carp::croak('Mimir: cannot bind a ' . ref($v) . ' reference') if ref $v && !blessed $v;
+  Carp::croak('Yggdrasil: cannot bind a ' . ref($v) . ' reference') if ref $v && !blessed $v;
   push @$bind, defined $v && blessed $v ? "$v" : $v;
   return '?';
 }
@@ -61,7 +61,7 @@ sub column {
 
 sub compile_select {
   my ($s, $q, $bind) = @_;
-  Carp::croak('Mimir: no table specified') unless defined $q->from;
+  Carp::croak('Yggdrasil: no table specified') unless defined $q->from;
   my $cols = $q->columns;
   my @p = ('select ' . ($q->is_distinct ? 'distinct ' : '')
     . ($cols && @$cols ? CORE::join(', ', map { $s->column($_, $bind) } @$cols) : '*'));
@@ -119,7 +119,7 @@ sub wheres_sql {
   my ($s, $wheres, $bind) = @_;
   my $sql = '';
   for my $w (@$wheres) {
-    my $m = $s->can('_where_' . $w->{type}) or Carp::croak("Mimir: unknown where type $w->{type}");
+    my $m = $s->can('_where_' . $w->{type}) or Carp::croak("Yggdrasil: unknown where type $w->{type}");
     my $part = $s->$m($w, $bind);
     next unless defined $part && length $part;
     $sql .= (length $sql ? " $w->{boolean} " : '') . $part;
@@ -208,7 +208,7 @@ sub compile_upsert {
 
 sub compile_update {
   my ($s, $q, $values, $bind) = @_;
-  Carp::croak('Mimir: update with joins is not supported') if @{$q->joins};
+  Carp::croak('Yggdrasil: update with joins is not supported') if @{$q->joins};
   my @sets = map {
     my ($c) = /([^.]+)$/;
     $s->wrap_segment($c) . ' = ' . $s->value($values->{$_}, $bind);
@@ -220,7 +220,7 @@ sub compile_update {
 
 sub compile_delete {
   my ($s, $q, $bind) = @_;
-  Carp::croak('Mimir: delete with joins is not supported') if @{$q->joins};
+  Carp::croak('Yggdrasil: delete with joins is not supported') if @{$q->joins};
   my $sql = 'delete from ' . $s->wrap($q->from);
   my $w = @{$q->wheres} ? $s->wheres_sql($q->wheres, $bind) : '';
   return length $w ? "$sql where $w" : $sql;
@@ -274,7 +274,7 @@ sub compile_alter {
   my ($s, $bp, $cmds) = @_;
   my @sql = map { $s->compile_add_column($bp->table, $_) } @{$bp->columns};
   for my $c (@$cmds) {
-    my $m = $s->can('compile_cmd_' . $c->{name}) or Carp::croak("Mimir: unsupported command $c->{name}");
+    my $m = $s->can('compile_cmd_' . $c->{name}) or Carp::croak("Yggdrasil: unsupported command $c->{name}");
     push @sql, $s->$m($bp, $c);
   }
   return @sql;
@@ -298,7 +298,7 @@ sub compile_column {
 
 sub column_type {
   my ($s, $c) = @_;
-  my $m = $s->can('type_' . $c->type) or Carp::croak('Mimir: unknown column type ' . $c->type);
+  my $m = $s->can('type_' . $c->type) or Carp::croak('Yggdrasil: unknown column type ' . $c->type);
   return $s->$m($c);
 }
 
@@ -342,7 +342,7 @@ sub compile_foreign {
   my ($s, $table, $fk) = @_;
   my $name = $fk->fk_name // index_name($table, $fk->columns, 'foreign');
   my $sql = 'constraint ' . $s->wrap_segment($name) . ' foreign key (' . $s->columnize($fk->columns) . ') references '
-    . $s->wrap($fk->table // Carp::croak('Mimir: foreign key needs ->on($table)')) . ' (' . $s->columnize($fk->ref_columns) . ')';
+    . $s->wrap($fk->table // Carp::croak('Yggdrasil: foreign key needs ->on($table)')) . ' (' . $s->columnize($fk->ref_columns) . ')';
   $sql .= ' on delete ' . $fk->delete_action if $fk->delete_action;
   $sql .= ' on update ' . $fk->update_action if $fk->update_action;
   return $sql;

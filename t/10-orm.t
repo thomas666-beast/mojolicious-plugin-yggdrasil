@@ -12,9 +12,9 @@ use Yggdrasil;
   use Moo;
   extends 'Yggdrasil::Model';
   has hook_log => (is => 'ro', default => sub { [] });
-  sub fillable { [qw(name email age is_admin meta password)] }
+  sub fillable { [qw(name email age is_admin settings password)] }
   sub hidden   { ['password'] }
-  sub casts    { { is_admin => 'bool', meta => 'json', age => 'int' } }
+  sub casts    { { is_admin => 'bool', settings => 'json', age => 'int' } }
   sub posts    { $_[0]->has_many('Post') }
   sub profile  { $_[0]->has_one('Profile') }
   sub roles    { $_[0]->belongs_to_many('Role') }
@@ -62,7 +62,7 @@ sub mig { my ($n, $body) = @_; open my $fh, '>', "$dir/$n.pl" or die; print $fh 
 mig('2026_01_01_000001_create_users_table', <<'M');
 up => sub { my ($s) = @_; $s->create('users', sub { my $t = shift;
   $t->id; $t->string('name'); $t->string('email')->unique; $t->string('password')->nullable;
-  $t->integer('age')->nullable; $t->boolean('is_admin')->default(0); $t->json('meta')->nullable; $t->timestamps; }) },
+  $t->integer('age')->nullable; $t->boolean('is_admin')->default(0); $t->json('settings')->nullable; $t->timestamps; }) },
 down => sub { $_[0]->drop_if_exists('users') },
 M
 mig('2026_01_01_000002_create_posts_table', <<'M');
@@ -98,8 +98,8 @@ M
 
 # ---------------------------------------------------------------- the suite
 my %targets = (sqlite => { driver => 'sqlite', database => ':memory:' });
-$targets{pg}    = { url => $ENV{MIMIR_TEST_PG} }    if $ENV{MIMIR_TEST_PG};
-$targets{mysql} = { url => $ENV{MIMIR_TEST_MYSQL} } if $ENV{MIMIR_TEST_MYSQL};
+$targets{pg}    = { url => $ENV{YGGDRASIL_TEST_PG} }    if $ENV{YGGDRASIL_TEST_PG};
+$targets{mysql} = { url => $ENV{YGGDRASIL_TEST_MYSQL} } if $ENV{YGGDRASIL_TEST_MYSQL};
 
 for my $name (sort keys %targets) {
   subtest "driver: $name" => sub { run_suite($name, $targets{$name}) };
@@ -108,14 +108,14 @@ done_testing;
 
 sub run_suite {
   my ($drv, $cfg) = @_;
-  my $mimir = Yggdrasil->init(
+  my $yggdrasil = Yggdrasil->init(
     connections => { default => $cfg, other => { driver => 'sqlite', database => ':memory:' } },
     default => 'default', model_namespaces => ['TestApp::Model'],
     migration_paths => { default => [$dir], other => [$dir] },
   );
-  my $db = $mimir->connection;
-  $db->schema->drop_all_tables if $ENV{"MIMIR_TEST_\U$drv"} || $drv eq 'sqlite';
-  my $m = $mimir->migrator;
+  my $db = $yggdrasil->connection;
+  $db->schema->drop_all_tables if $ENV{"YGGDRASIL_TEST_\U$drv"} || $drv eq 'sqlite';
+  my $m = $yggdrasil->migrator;
 
   # ---- migrations
   is scalar @{$m->pending}, 6, 'six pending migrations';
@@ -143,14 +143,14 @@ sub run_suite {
   unlink $made;
 
   # ---- CRUD, mass assignment, casts, accessors, hooks
-  my $u = TestApp::Model::User->create({ id => 999, name => 'alice', email => 'ALICE@Example.com', age => 30, is_admin => 1, meta => { tags => [1, 2] }, password => 'secret' });
+  my $u = TestApp::Model::User->create({ id => 999, name => 'alice', email => 'ALICE@Example.com', age => 30, is_admin => 1, settings => { tags => [1, 2] }, password => 'secret' });
   isnt $u->id, 999, 'primary key is guarded';
   ok $u->in_storage, 'in storage';
   is $u->email, 'alice@example.com', 'mutator';
   is $u->name, 'Alice', 'accessor';
   is_deeply $u->hook_log, ['saving', 'created'], 'hooks via Moo modifiers';
   my $f = TestApp::Model::User->find($u->id);
-  ok $f->is_admin, 'bool cast'; is_deeply $f->meta, { tags => [1, 2] }, 'json cast round trip';
+  ok $f->is_admin, 'bool cast'; is_deeply $f->settings, { tags => [1, 2] }, 'json cast round trip';
   is $f->age, 30, 'int cast';
   ok defined $f->created_at, 'timestamps set';
   my $h = $f->to_hash;
@@ -257,7 +257,7 @@ sub run_suite {
   is(scalar($db->transaction(sub { 42 })), 42, 'transaction returns value');
 
   # ---- multiple connections
-  my $other = $mimir->migrator('other'); $other->run;
+  my $other = $yggdrasil->migrator('other'); $other->run;
   TestApp::Model::User->on('other')->insert({ name => 'x', email => 'x@x.io' });
   is(TestApp::Model::User->on('other')->count, 1, 'second connection');
   is(TestApp::Model::User->where(email => 'x@x.io')->count, 0, 'default connection untouched');
@@ -270,5 +270,5 @@ sub run_suite {
   is(TestApp::Model::User->find($weird->id)->attributes->{name}, q{Robert'); DROP TABLE users;--}, 'values are bound, not interpolated');
 
   $m->fresh; is(TestApp::Model::User->count, 0, 'fresh');
-  $mimir->disconnect_all;
+  $yggdrasil->disconnect_all;
 }
