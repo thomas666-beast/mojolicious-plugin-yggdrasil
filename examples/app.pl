@@ -2,7 +2,7 @@
 use Mojolicious::Lite -signatures;
 use lib 'lib';
 
-plugin Mimir => {
+plugin Yggdrasil => {
   connections => { main => { driver => 'sqlite', database => 'db/app.db' } },
   models      => ['MyApp::Model'],
   migrations  => 'migrations',
@@ -26,11 +26,11 @@ get '/articles/:id' => sub ($c) {
   $c->render(json => $article);
 };
 
-# find_or_fail() / first_or_fail() throw Mimir::Exception (type "model_not_found") => answer 404
+# find_or_fail() / first_or_fail() throw Yggdrasil::Exception (type "model_not_found") => answer 404
 app->hook(around_action => sub ($next, $c, $action, $last) {
   my $r = eval { $next->() };
   if (my $err = $@) {
-    die $err unless ref $err && $err->isa('Mimir::Exception') && $err->is_not_found;
+    die $err unless ref $err && $err->isa('Yggdrasil::Exception') && $err->is_not_found;
     $c->render(json => { error => 'not found' }, status => 404);
     return undef;
   }

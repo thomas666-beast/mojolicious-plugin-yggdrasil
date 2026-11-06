@@ -4,13 +4,13 @@ use Test::More;
 BEGIN { eval { require DBD::SQLite; 1 } or plan skip_all => 'DBD::SQLite is required' }
 use File::Temp qw(tempdir);
 use JSON::PP ();
-use Mimir;
+use Yggdrasil;
 
 # ---------------------------------------------------------------- models
 {
   package TestApp::Model::User;
   use Moo;
-  extends 'Mimir::Model';
+  extends 'Yggdrasil::Model';
   has hook_log => (is => 'ro', default => sub { [] });
   sub fillable { [qw(name email age is_admin meta password)] }
   sub hidden   { ['password'] }
@@ -29,8 +29,8 @@ use Mimir;
 
   package TestApp::Model::Post;
   use Moo;
-  extends 'Mimir::Model';
-  with 'Mimir::Role::SoftDeletes';
+  extends 'Yggdrasil::Model';
+  with 'Yggdrasil::Role::SoftDeletes';
   sub fillable { [qw(title votes published)] }
   sub casts    { { published => 'bool' } }
   sub user     { $_[0]->belongs_to('User') }
@@ -38,19 +38,19 @@ use Mimir;
 
   package TestApp::Model::Comment;
   use Moo;
-  extends 'Mimir::Model';
+  extends 'Yggdrasil::Model';
   sub fillable { [qw(body)] }
   sub post { $_[0]->belongs_to('Post') }
 
   package TestApp::Model::Profile;
   use Moo;
-  extends 'Mimir::Model';
+  extends 'Yggdrasil::Model';
   sub fillable { [qw(bio)] }
   sub user { $_[0]->belongs_to('User') }
 
   package TestApp::Model::Role;
   use Moo;
-  extends 'Mimir::Model';
+  extends 'Yggdrasil::Model';
   sub fillable { [qw(name)] }
   sub users { $_[0]->belongs_to_many('User') }
 }
@@ -108,7 +108,7 @@ done_testing;
 
 sub run_suite {
   my ($drv, $cfg) = @_;
-  my $mimir = Mimir->init(
+  my $mimir = Yggdrasil->init(
     connections => { default => $cfg, other => { driver => 'sqlite', database => ':memory:' } },
     default => 'default', model_namespaces => ['TestApp::Model'],
     migration_paths => { default => [$dir], other => [$dir] },

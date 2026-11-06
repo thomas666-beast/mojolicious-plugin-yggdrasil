@@ -1,6 +1,6 @@
-package Mimir::Schema::Builder;
+package Yggdrasil::Schema::Builder;
 use Moo;
-use Mimir::Schema::Blueprint;
+use Yggdrasil::Schema::Blueprint;
 
 has connection => (is => 'ro', required => 1);
 
@@ -14,14 +14,14 @@ sub _build_bp {
 
 sub create {
   my ($s, $table, $cb) = @_;
-  my $bp = Mimir::Schema::Blueprint->new(table => $table, create => 1);
+  my $bp = Yggdrasil::Schema::Blueprint->new(table => $table, create => 1);
   $cb->($bp);
   $s->_build_bp($bp);
 }
 
 sub table {
   my ($s, $table, $cb) = @_;
-  my $bp = Mimir::Schema::Blueprint->new(table => $table, create => 0);
+  my $bp = Yggdrasil::Schema::Blueprint->new(table => $table, create => 0);
   $cb->($bp);
   $s->_build_bp($bp);
 }

@@ -1,9 +1,9 @@
-package Mojolicious::Plugin::Mimir::Command::mimir;
+package Mojolicious::Plugin::Yggdrasil::Command::mimir;
 use Mojo::Base 'Mojolicious::Command';
 use Getopt::Long qw(GetOptionsFromArray);
 use File::Path ();
 use File::Spec ();
-use Mimir::Util qw(class_basename snake_case pluralize);
+use Yggdrasil::Util qw(class_basename snake_case pluralize);
 
 has description => 'Run Mimir ORM commands (migrate, rollback, status, make:migration ...)';
 has usage       => sub { shift->extract_usage };
@@ -72,13 +72,13 @@ sub run {
     print $fh <<"EOT";
 package $class;
 use Moo;
-extends 'Mimir::Model';
+extends 'Yggdrasil::Model';
 
 # sub table     { '${\ pluralize(snake_case($name)) }' }
 # sub fillable  { [qw(name email)] }
 # sub hidden    { [qw(password)] }
 # sub casts     { { is_admin => 'bool', meta => 'json' } }
-# with 'Mimir::Role::SoftDeletes';
+# with 'Yggdrasil::Role::SoftDeletes';
 
 1;
 EOT

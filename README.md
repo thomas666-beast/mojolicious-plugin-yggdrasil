@@ -1,11 +1,11 @@
-# Mojolicious::Plugin::Mimir
+# Mojolicious::Plugin::Yggdrasil
 
 An **Eloquent-style ORM** for Mojolicious: query builder, Moo-based models, relations,
 eager loading, soft deletes, schema builder and file-based migrations — on
 **SQLite, MySQL/MariaDB and PostgreSQL**, with **several named connections** at once.
 
 ```perl
-plugin Mimir => {
+plugin Yggdrasil => {
   default     => 'main',
   connections => {
     main    => { driver => 'sqlite', database => 'db/app.db' },
@@ -48,16 +48,16 @@ Extras: `options` (extra DBI attributes), `on_connect => sub ($dbh) {}`, `timezo
 `charset`/`collation`/`engine` (mysql DDL), `pragmas => { journal_mode => 'WAL' }` (sqlite; `foreign_keys=ON` and
 `busy_timeout` are on by default), `ping_interval` (seconds, default 60).
 
-Helpers: `$c->mimir` (manager), `$c->db($name?)` (connection), `$c->model('User')` (class name), `$c->table('users', $conn?)` (query builder).
-Outside a Mojolicious app: `Mimir->init(connections => {...}, model_namespaces => [...])`.
+Helpers: `$c->yggdrasil` (manager), `$c->db($name?)` (connection), `$c->model('User')` (class name), `$c->table('users', $conn?)` (query builder).
+Outside a Mojolicious app: `Yggdrasil->init(connections => {...}, model_namespaces => [...])`.
 
 ## Models
 
 ```perl
 package MyApp::Model::User;
 use Moo;
-extends 'Mimir::Model';
-with 'Mimir::Role::SoftDeletes';                 # optional
+extends 'Yggdrasil::Model';
+with 'Yggdrasil::Role::SoftDeletes';                 # optional
 
 sub fillable { [qw(name email password meta)] }  # mass assignment (default: everything except the primary key)
 sub hidden   { ['password'] }                    # left out of to_hash / JSON
@@ -98,10 +98,10 @@ User->update_or_create({ email => $e }, { name => $n });
 User->on('reports')->where(...)->get;                            # pick a connection
 ```
 
-`find_or_fail` / `first_or_fail` throw a `Mimir::Exception` with `->is_not_found`; SQL errors throw one with `->sql`
+`find_or_fail` / `first_or_fail` throw a `Yggdrasil::Exception` with `->is_not_found`; SQL errors throw one with `->sql`
 and `->bindings`.
 
-**Soft deletes** (`with 'Mimir::Role::SoftDeletes'`, needs `$t->soft_deletes` in the migration): `delete` sets
+**Soft deletes** (`with 'Yggdrasil::Role::SoftDeletes'`, needs `$t->soft_deletes` in the migration): `delete` sets
 `deleted_at`, queries and relations hide trashed rows; `Post->with_trashed`, `Post->only_trashed`,
 `$p->trashed`, `$p->restore`, `$p->force_delete`.
 
@@ -161,7 +161,7 @@ $post->user->associate($u);                                   # belongs_to
 
 ## Migrations
 
-`./myapp.pl mimir make:migration create_posts_table` writes `migrations/2026_11_06_101500_create_posts_table.pl`:
+`./myapp.pl yggdrasil make:migration create_posts_table` writes `migrations/2026_11_06_101500_create_posts_table.pl`:
 
 ```perl
 use strict; use warnings;
@@ -188,12 +188,12 @@ return {
 ```
 
 ```
-./myapp.pl mimir migrate [--pretend] [--step]     # run pending (one batch; --step: a batch per migration)
-./myapp.pl mimir rollback [--step N]              # undo last batch (or last N migrations)
-./myapp.pl mimir reset | refresh | fresh | status
-./myapp.pl mimir make:migration NAME [--create TABLE | --table TABLE]
-./myapp.pl mimir make:model Post [--migration]
-./myapp.pl mimir migrate -c reports               # any command accepts --connection
+./myapp.pl yggdrasil migrate [--pretend] [--step]     # run pending (one batch; --step: a batch per migration)
+./myapp.pl yggdrasil rollback [--step N]              # undo last batch (or last N migrations)
+./myapp.pl yggdrasil reset | refresh | fresh | status
+./myapp.pl yggdrasil make:migration NAME [--create TABLE | --table TABLE]
+./myapp.pl yggdrasil make:model Post [--migration]
+./myapp.pl yggdrasil migrate -c reports               # any command accepts --connection
 ```
 `create_x_table` / `add_y_to_x_table` names generate the right stub. Each connection has its own migration directory
 and its own `migrations` table. Migrations run inside a transaction on SQLite/PostgreSQL (MySQL DDL cannot be rolled back).
@@ -226,7 +226,7 @@ $c->db->transaction(sub {            # rolls back and rethrows on die; nested ca
   Connections are lazy and **fork-safe** (a child never reuses its parent's socket) and re-ping after idle periods.
 * SQLite: `alter table` cannot add foreign keys/primary keys (declare them in `create`); `drop/rename column` need SQLite ≥ 3.35 / 3.25.
   MySQL `rename column` needs 8.0+. MySQL `ilike` is mapped to `like`.
-* The model layer finds the active `Mimir` object through a process-wide singleton (`Mimir->instance`, set by the plugin).
+* The model layer finds the active `Yggdrasil` object through a process-wide singleton (`Yggdrasil->instance`, set by the plugin).
   One Mojolicious app per process is the supported setup.
 * Query-builder `update`/`delete` bypass model hooks and mutators (they still apply casts, `updated_at` and soft deletes).
 
@@ -234,6 +234,6 @@ $c->db->transaction(sub {            # rolls back and rethrows on die; nested ca
 
 ```
 prove -l t/                                   # SQL generation + SQLite end-to-end (+ plugin tests if Mojolicious is installed)
-MIMIR_TEST_PG='postgresql://u:p@localhost/mimir_test' MIMIR_TEST_MYSQL='mysql://u:p@localhost/mimir_test' prove -l t/10-orm.t
+YGGDRASIL_TEST_PG='postgresql://u:p@localhost/Yggdrasil_test' YGGDRASIL_TEST_MYSQL='mysql://u:p@localhost/yggdrasil_test' prove -l t/10-orm.t
 ```
 **The PG/MySQL runs drop every table in the target database — use empty, dedicated test databases.**

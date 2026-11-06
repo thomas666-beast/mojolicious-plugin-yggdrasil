@@ -1,9 +1,9 @@
-package Mimir::Relation::BelongsToMany;
+package Yggdrasil::Relation::BelongsToMany;
 use Moo;
 use Carp ();
 use Scalar::Util qw(blessed);
 use Mojo::Collection;
-extends 'Mimir::Relation';
+extends 'Yggdrasil::Relation';
 
 has pivot_table       => (is => 'ro', required => 1);
 has foreign_pivot_key => (is => 'ro', required => 1);   # pivot column pointing at the parent

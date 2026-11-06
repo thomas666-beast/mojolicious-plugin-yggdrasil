@@ -1,6 +1,6 @@
-package Mimir::Grammar::Pg;
+package Yggdrasil::Grammar::Pg;
 use Moo;
-extends 'Mimir::Grammar';
+extends 'Yggdrasil::Grammar';
 
 sub driver { 'pg' }
 

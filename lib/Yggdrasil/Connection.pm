@@ -1,10 +1,10 @@
-package Mimir::Connection;
+package Yggdrasil::Connection;
 use Moo;
 use Carp ();
 use DBI;
 use Scalar::Util qw(blessed);
 use Time::HiRes ();
-use Mimir::Exception;
+use Yggdrasil::Exception;
 
 my %ALIAS = (
   sqlite => 'sqlite', sqlite3 => 'sqlite',
@@ -37,7 +37,7 @@ sub _build_driver {
 
 sub _build_grammar {
   my $s = shift;
-  my $class = 'Mimir::Grammar::' . $GRAMMAR{$s->driver};
+  my $class = 'Yggdrasil::Grammar::' . $GRAMMAR{$s->driver};
   (my $f = "$class.pm") =~ s{::}{/}g;
   require $f;
   return $class->new(config => $s->config);
@@ -99,7 +99,7 @@ sub _connect_info {
 sub _connect {
   my $s = shift;
   my $dbh = DBI->connect($s->_connect_info)
-    or Mimir::Exception->throw(message => "Mimir: cannot connect to '" . $s->name . "': " . ($DBI::errstr // 'unknown error'), type => 'connection');
+    or Yggdrasil::Exception->throw(message => "Mimir: cannot connect to '" . $s->name . "': " . ($DBI::errstr // 'unknown error'), type => 'connection');
   $s->_after_connect($dbh);
   $s->_dbh($dbh);
   $s->_pid($$);
@@ -181,7 +181,7 @@ sub _run {
   $s->_log($sql, $bind, Time::HiRes::tv_interval($t0) * 1000);
   unless ($ok) {
     die $err if ref $err;
-    Mimir::Exception->throw(message => "$err", type => 'query', sql => $sql, bindings => $bind);
+    Yggdrasil::Exception->throw(message => "$err", type => 'query', sql => $sql, bindings => $bind);
   }
   return $res;
 }
@@ -219,14 +219,14 @@ sub insert_get_id {
 
 sub table {
   my ($s, $t) = @_;
-  require Mimir::Query;
-  return Mimir::Query->new(connection => $s, from => $t);
+  require Yggdrasil::Query;
+  return Yggdrasil::Query->new(connection => $s, from => $t);
 }
 
 sub schema {
   my $s = shift;
-  require Mimir::Schema::Builder;
-  return Mimir::Schema::Builder->new(connection => $s);
+  require Yggdrasil::Schema::Builder;
+  return Yggdrasil::Schema::Builder->new(connection => $s);
 }
 
 # ---- transactions (nested ones use savepoints) -----------------------------

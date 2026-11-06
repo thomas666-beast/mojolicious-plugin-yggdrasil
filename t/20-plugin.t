@@ -13,7 +13,7 @@ use Test::Mojo;
 {
   package TestApp::Model::Note;
   use Moo;
-  extends 'Mimir::Model';
+  extends 'Yggdrasil::Model';
   sub fillable { [qw(body)] }
 }
 
@@ -28,7 +28,7 @@ return {
 M
 close $fh;
 
-plugin Mimir => {
+plugin Yggdrasil => {
   connections => { default => { driver => 'sqlite', database => ':memory:' } },
   models      => ['TestApp::Model'],
   migrations  => $dir,
@@ -52,8 +52,8 @@ $t->get_ok('/notes')->status_is(200)->json_is('/1/body', 'world');
 $t->get_ok('/count')->content_is('2');
 
 # the "mimir" command
-require Mojolicious::Plugin::Mimir::Command::mimir;
-my $cmd = Mojolicious::Plugin::Mimir::Command::mimir->new(app => app);
+require Mojolicious::Plugin::Yggdrasil::Command::mimir;
+my $cmd = Mojolicious::Plugin::Yggdrasil::Command::mimir->new(app => app);
 my $out = '';
 {
   open my $h, '>', \$out or die;

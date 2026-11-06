@@ -1,6 +1,6 @@
-package Mimir::Relation::BelongsTo;
+package Yggdrasil::Relation::BelongsTo;
 use Moo;
-extends 'Mimir::Relation';
+extends 'Yggdrasil::Relation';
 
 has foreign_key => (is => 'ro', required => 1);   # column on the parent
 has owner_key   => (is => 'ro', required => 1);   # column on the related table

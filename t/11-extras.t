@@ -1,8 +1,8 @@
 use Test::More; BEGIN { eval { require DBD::SQLite; 1 } or plan skip_all => 'DBD::SQLite is required' }
-use strict; use warnings; use Mimir;
-{ package T::Model::Author; use Moo; extends 'Mimir::Model'; sub fillable {[qw(name)]} sub books { $_[0]->has_many('Book') } sub strict_attributes {1}
-  package T::Model::Book; use Moo; extends 'Mimir::Model'; sub fillable {[qw(title author_id)]} sub author { $_[0]->belongs_to('Author') } }
-my $m = Mimir->init(connections=>{default=>{driver=>'sqlite',database=>':memory:'}}, model_namespaces=>['T::Model']);
+use strict; use warnings; use Yggdrasil;
+{ package T::Model::Author; use Moo; extends 'Yggdrasil::Model'; sub fillable {[qw(name)]} sub books { $_[0]->has_many('Book') } sub strict_attributes {1}
+  package T::Model::Book; use Moo; extends 'Yggdrasil::Model'; sub fillable {[qw(title author_id)]} sub author { $_[0]->belongs_to('Author') } }
+my $m = Yggdrasil->init(connections=>{default=>{driver=>'sqlite',database=>':memory:'}}, model_namespaces=>['T::Model']);
 my $s = $m->schema;
 $s->create('authors', sub { $_[0]->id; $_[0]->string('name'); $_[0]->timestamps });
 $s->create('books', sub { $_[0]->id; $_[0]->foreign_id('author_id')->constrained; $_[0]->string('title'); $_[0]->timestamps });

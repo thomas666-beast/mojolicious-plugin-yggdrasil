@@ -1,4 +1,4 @@
-package Mimir::Schema::ForeignKey;
+package Yggdrasil::Schema::ForeignKey;
 use Moo;
 use Carp ();
 
@@ -30,9 +30,9 @@ sub ref_columns   { $_[0]->_refs // ['id'] }
 sub delete_action { $_[0]->_on_delete }
 sub update_action { $_[0]->_on_update }
 
-package Mimir::Schema::Column;
+package Yggdrasil::Schema::Column;
 use Moo;
-use Mimir::Util qw(pluralize);
+use Yggdrasil::Util qw(pluralize);
 
 has name  => (is => 'ro', required => 1);
 has type  => (is => 'ro', required => 1);
@@ -48,7 +48,7 @@ sub comment        { $_[0]->attrs->{comment} = $_[1]; $_[0] }
 
 sub _fk {
   my $s = shift;
-  return $s->attrs->{fk} //= Mimir::Schema::ForeignKey->new(columns => [$s->name]);
+  return $s->attrs->{fk} //= Yggdrasil::Schema::ForeignKey->new(columns => [$s->name]);
 }
 
 sub constrained {

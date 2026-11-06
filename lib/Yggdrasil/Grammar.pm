@@ -1,8 +1,8 @@
-package Mimir::Grammar;
+package Yggdrasil::Grammar;
 use Moo;
 use Carp ();
 use Scalar::Util qw(blessed looks_like_number);
-use Mimir::Util qw(index_name);
+use Yggdrasil::Util qw(index_name);
 
 has config => (is => 'ro', default => sub { +{} });
 
@@ -45,7 +45,7 @@ sub value {
     push @$bind, @b;
     return $sql;
   }
-  return '(' . $s->compile_select($v, $bind) . ')' if blessed $v && $v->isa('Mimir::Query');
+  return '(' . $s->compile_select($v, $bind) . ')' if blessed $v && $v->isa('Yggdrasil::Query');
   Carp::croak('Mimir: cannot bind a ' . ref($v) . ' reference') if ref $v && !blessed $v;
   push @$bind, defined $v && blessed $v ? "$v" : $v;
   return '?';
@@ -137,7 +137,7 @@ sub _where_in {
   my $not = $w->{not} ? 'not ' : '';
   my $v = $w->{values};
   my $col = $s->column($w->{column}, $bind);
-  return "$col ${not}in (" . $s->compile_select($v, $bind) . ')' if blessed $v && $v->isa('Mimir::Query');
+  return "$col ${not}in (" . $s->compile_select($v, $bind) . ')' if blessed $v && $v->isa('Yggdrasil::Query');
   return $w->{not} ? '1 = 1' : '0 = 1' unless @$v;
   return "$col ${not}in (" . CORE::join(', ', map { $s->value($_, $bind) } @$v) . ')';
 }

@@ -1,4 +1,4 @@
-package Mimir::Exception;
+package Yggdrasil::Exception;
 use Moo;
 use overload '""' => sub { $_[0]->to_string }, 'bool' => sub { 1 }, fallback => 1;
 

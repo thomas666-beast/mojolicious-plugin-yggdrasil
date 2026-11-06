@@ -1,10 +1,10 @@
 use strict;
 use warnings;
 use Test::More;
-use Mimir::Connection;
-use Mimir::Schema::Blueprint;
+use Yggdrasil::Connection;
+use Yggdrasil::Schema::Blueprint;
 
-my %c = map { $_ => Mimir::Connection->new(name => $_, config => { driver => $_, database => 'x' }) } qw(sqlite mysql pg);
+my %c = map { $_ => Yggdrasil::Connection->new(name => $_, config => { driver => $_, database => 'x' }) } qw(sqlite mysql pg);
 
 sub sql_of { my ($drv, $cb) = @_; my $q = $cb->($c{$drv}->table('users')); my ($s, $b) = $q->compile; return ($s, $b) }
 
@@ -106,7 +106,7 @@ sub sql_of { my ($drv, $cb) = @_; my $q = $cb->($c{$drv}->table('users')); my ($
 # --- schema grammar
 sub ddl {
   my ($drv, $cb, $create) = @_;
-  my $bp = Mimir::Schema::Blueprint->new(table => 'posts', create => $create // 1);
+  my $bp = Yggdrasil::Schema::Blueprint->new(table => 'posts', create => $create // 1);
   $cb->($bp);
   return $c{$drv}->grammar->compile_blueprint($bp);
 }

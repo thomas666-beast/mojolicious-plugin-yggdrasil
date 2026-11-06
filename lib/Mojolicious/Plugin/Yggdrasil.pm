@@ -54,7 +54,7 @@ sub register {
   $app->helper(model => sub { my ($c, $n) = @_; $mimir->model($n) });
   $app->helper(table => sub { my ($c, $t, $n) = @_; $mimir->table($t, $n) });
 
-  push @{$app->commands->namespaces}, 'Mojolicious::Plugin::Mimir::Command';
+  push @{$app->commands->namespaces}, 'Mojolicious::Plugin::Yggdrasil::Command';
 
   $mimir->migrator($default)->run if $conf->{migrate};
   return $mimir;

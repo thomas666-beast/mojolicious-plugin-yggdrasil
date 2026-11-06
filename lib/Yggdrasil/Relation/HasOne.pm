@@ -1,6 +1,6 @@
-package Mimir::Relation::HasOne;
+package Yggdrasil::Relation::HasOne;
 use Moo;
-extends 'Mimir::Relation::HasOneOrMany';
+extends 'Yggdrasil::Relation::HasOneOrMany';
 
 sub results { $_[0]->first }
 

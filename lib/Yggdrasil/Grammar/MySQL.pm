@@ -1,6 +1,6 @@
-package Mimir::Grammar::MySQL;
+package Yggdrasil::Grammar::MySQL;
 use Moo;
-extends 'Mimir::Grammar';
+extends 'Yggdrasil::Grammar';
 
 sub driver                    { 'mysql' }
 sub quote_char                { '`' }

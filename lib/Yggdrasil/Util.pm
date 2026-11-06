@@ -1,4 +1,4 @@
-package Mimir::Util;
+package Yggdrasil::Util;
 use strict;
 use warnings;
 use Exporter 'import';

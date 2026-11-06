@@ -1,7 +1,7 @@
-package Mimir::Grammar::SQLite;
+package Yggdrasil::Grammar::SQLite;
 use Moo;
 use Carp ();
-extends 'Mimir::Grammar';
+extends 'Yggdrasil::Grammar';
 
 sub driver   { 'sqlite' }
 sub no_limit { '-1' }

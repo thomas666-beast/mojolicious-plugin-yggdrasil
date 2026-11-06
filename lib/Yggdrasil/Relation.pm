@@ -1,4 +1,4 @@
-package Mimir::Relation;
+package Yggdrasil::Relation;
 use Moo;
 use Carp ();
 use Scalar::Util qw(blessed refaddr);

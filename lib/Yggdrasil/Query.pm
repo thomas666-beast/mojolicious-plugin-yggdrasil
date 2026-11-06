@@ -1,10 +1,10 @@
-package Mimir::Query;
+package Yggdrasil::Query;
 use Moo;
 use Carp ();
 use Scalar::Util qw(blessed looks_like_number refaddr);
 use Mojo::Collection;
-use Mimir::Paginator;
-use Mimir::Exception;
+use Yggdrasil::Paginator;
+use Yggdrasil::Exception;
 
 our $AUTOLOAD;
 
@@ -30,7 +30,7 @@ sub get_offset   { $_[0]->_offset }
 sub get_lock     { $_[0]->_lock }
 sub grammar      { $_[0]->connection->grammar }
 
-sub new_query { Mimir::Query->new(connection => $_[0]->connection) }
+sub new_query { Yggdrasil::Query->new(connection => $_[0]->connection) }
 
 sub clone {
   my $s = shift;
@@ -283,14 +283,14 @@ sub find_or_fail {
   my $r = $s->find($id);
   return $r if defined $r;
   my $m = $s->model // 'table ' . $s->from;
-  Mimir::Exception->throw(message => "No query results for $m [" . ($id // 'undef') . ']', type => 'model_not_found', model => $s->model);
+  Yggdrasil::Exception->throw(message => "No query results for $m [" . ($id // 'undef') . ']', type => 'model_not_found', model => $s->model);
 }
 
 sub first_or_fail {
   my $s = shift;
   my $r = $s->first(@_);
   return $r if defined $r;
-  Mimir::Exception->throw(message => 'No query results for ' . ($s->model // 'table ' . $s->from), type => 'model_not_found', model => $s->model);
+  Yggdrasil::Exception->throw(message => 'No query results for ' . ($s->model // 'table ' . $s->from), type => 'model_not_found', model => $s->model);
 }
 
 sub value {
@@ -344,7 +344,7 @@ sub paginate {
   $page = 1 if $page !~ /^\d+$/ || $page < 1;
   my $total = $s->count;
   my $items = $total ? $s->clone->for_page($page, $per)->get : Mojo::Collection->new;
-  return Mimir::Paginator->new(items => $items, total => $total, per_page => $per, current_page => $page);
+  return Yggdrasil::Paginator->new(items => $items, total => $total, per_page => $per, current_page => $page);
 }
 
 # Return exactly 0 from the callback to stop early.
@@ -472,7 +472,7 @@ sub AUTOLOAD {
   my $m = ref $s ? $s->model : undef;
   if ($m && (my $scope = $m->can("scope_$n"))) {
     my $r = $scope->($m, $s, @_);
-    return blessed $r && $r->isa('Mimir::Query') ? $r : $s;
+    return blessed $r && $r->isa('Yggdrasil::Query') ? $r : $s;
   }
   Carp::croak(qq{Can't locate object method "$n" via package "} . (ref $s || $s) . '"');
 }

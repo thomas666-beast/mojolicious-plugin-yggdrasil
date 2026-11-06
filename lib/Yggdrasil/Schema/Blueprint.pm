@@ -1,8 +1,8 @@
-package Mimir::Schema::Blueprint;
+package Yggdrasil::Schema::Blueprint;
 use Moo;
 use Carp ();
-use Mimir::Util qw(index_name);
-use Mimir::Schema::Column;
+use Yggdrasil::Util qw(index_name);
+use Yggdrasil::Schema::Column;
 
 has table    => (is => 'ro', required => 1);
 has create   => (is => 'ro', default => sub { 0 });
@@ -12,7 +12,7 @@ has commands => (is => 'ro', default => sub { [] });
 sub _col {
   my ($s, $type, $name, %a) = @_;
   Carp::croak('Mimir: column name required') unless defined $name;
-  my $c = Mimir::Schema::Column->new(name => $name, type => $type, attrs => {%a});
+  my $c = Yggdrasil::Schema::Column->new(name => $name, type => $type, attrs => {%a});
   push @{$s->columns}, $c;
   return $c;
 }
@@ -58,7 +58,7 @@ sub _cols { my $c = shift; ref $c eq 'ARRAY' ? $c : [$c] }
 
 sub foreign {
   my ($s, $cols, $name) = @_;
-  my $fk = Mimir::Schema::ForeignKey->new(columns => _cols($cols), fk_name => $name);
+  my $fk = Yggdrasil::Schema::ForeignKey->new(columns => _cols($cols), fk_name => $name);
   push @{$s->commands}, { name => 'foreign', fk => $fk };
   return $fk;
 }

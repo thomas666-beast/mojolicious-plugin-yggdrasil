@@ -1,16 +1,16 @@
-package Mimir::Model;
+package Yggdrasil::Model;
 use Moo;
 use Carp ();
 use JSON::PP ();
 use Scalar::Util qw(blessed);
 use Mimir;
-use Mimir::Query;
-use Mimir::Util qw(class_basename snake_case pluralize uniq now_string);
-use Mimir::Exception;
-use Mimir::Relation::HasOne;
-use Mimir::Relation::HasMany;
-use Mimir::Relation::BelongsTo;
-use Mimir::Relation::BelongsToMany;
+use Yggdrasil::Query;
+use Yggdrasil::Util qw(class_basename snake_case pluralize uniq now_string);
+use Yggdrasil::Exception;
+use Yggdrasil::Relation::HasOne;
+use Yggdrasil::Relation::HasMany;
+use Yggdrasil::Relation::BelongsTo;
+use Yggdrasil::Relation::BelongsToMany;
 
 our $AUTOLOAD;
 my $JSON = JSON::PP->new->canonical->allow_nonref;
@@ -80,7 +80,7 @@ sub query {
   my ($class, %o) = @_;
   $class = ref $class || $class;
   my $conn = $o{using} ? manager()->connection($o{using}) : $class->connection;
-  my $q = Mimir::Query->new(connection => $conn, model => $class, from => $class->table);
+  my $q = Yggdrasil::Query->new(connection => $conn, model => $class, from => $class->table);
   $q->where_null($class->table . '.' . $class->deleted_at_column)
     if $class->soft_deletes && !$o{with_trashed};
   return $q;
@@ -288,7 +288,7 @@ sub _do_delete { $_[0]->_hard_delete }
 sub refresh {
   my $s = shift;
   my $row = $s->_table_query->where($s->primary_key, $s->get_key)->first
-    or Mimir::Exception->throw(message => 'Cannot refresh: row no longer exists', type => 'model_not_found');
+    or Yggdrasil::Exception->throw(message => 'Cannot refresh: row no longer exists', type => 'model_not_found');
   $s->attributes({%$row});
   $s->original({%$row});
   $s->relations({});
@@ -333,14 +333,14 @@ sub _fk_for { snake_case(class_basename(ref($_[0]) || $_[0])) . '_id' }
 
 sub has_one {
   my ($s, $related, $fk, $lk) = @_;
-  return Mimir::Relation::HasOne->new(
+  return Yggdrasil::Relation::HasOne->new(
     parent => $s, related => manager()->model($related),
     foreign_key => $fk // $s->_fk_for, local_key => $lk // $s->primary_key);
 }
 
 sub has_many {
   my ($s, $related, $fk, $lk) = @_;
-  return Mimir::Relation::HasMany->new(
+  return Yggdrasil::Relation::HasMany->new(
     parent => $s, related => manager()->model($related),
     foreign_key => $fk // $s->_fk_for, local_key => $lk // $s->primary_key);
 }
@@ -348,7 +348,7 @@ sub has_many {
 sub belongs_to {
   my ($s, $related, $fk, $owner) = @_;
   my $class = manager()->model($related);
-  return Mimir::Relation::BelongsTo->new(
+  return Yggdrasil::Relation::BelongsTo->new(
     parent => $s, related => $class,
     foreign_key => $fk // $class->_fk_for, owner_key => $owner // $class->primary_key);
 }
@@ -356,7 +356,7 @@ sub belongs_to {
 sub belongs_to_many {
   my ($s, $related, $pivot, $fpk, $rpk, $pk, $rk) = @_;
   my $class = manager()->model($related);
-  return Mimir::Relation::BelongsToMany->new(
+  return Yggdrasil::Relation::BelongsToMany->new(
     parent => $s, related => $class,
     pivot_table       => $pivot // CORE::join('_', sort { $a cmp $b } map { snake_case(class_basename($_)) } (ref $s, $class)),
     foreign_pivot_key => $fpk // $s->_fk_for,
@@ -373,7 +373,7 @@ sub related {
   my ($s, $name) = @_;
   return $s->relations->{$name} if exists $s->relations->{$name};
   my $rel = $s->$name;
-  Carp::croak(qq{"$name" is not a relation on } . ref $s) unless blessed $rel && $rel->isa('Mimir::Relation');
+  Carp::croak(qq{"$name" is not a relation on } . ref $s) unless blessed $rel && $rel->isa('Yggdrasil::Relation');
   return $s->relations->{$name} = $rel->results;
 }
 
@@ -392,7 +392,7 @@ sub eager_load_relations {
     my ($first, $rest) = split /\./, $name, 2;
     unless ($done{$first}++) {
       my $rel = $models->[0]->$first;
-      Carp::croak(qq{"$first" is not a relation on } . ref $models->[0]) unless blessed $rel && $rel->isa('Mimir::Relation');
+      Carp::croak(qq{"$first" is not a relation on } . ref $models->[0]) unless blessed $rel && $rel->isa('Yggdrasil::Relation');
       $rel->eager_load($models, $first, defined $rest ? undef : $cb);
     }
     next unless defined $rest;

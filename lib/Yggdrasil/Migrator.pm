@@ -1,4 +1,4 @@
-package Mimir::Migrator;
+package Yggdrasil::Migrator;
 use Moo;
 use Carp ();
 use File::Basename ();
@@ -6,14 +6,14 @@ use File::Path ();
 use File::Spec ();
 use POSIX ();
 use Scalar::Util qw(blessed);
-use Mimir::Schema::Builder;
+use Yggdrasil::Schema::Builder;
 
 has connection => (is => 'ro', required => 1);
 has paths      => (is => 'ro', default => sub { [] });
 has table      => (is => 'ro', default => sub { 'migrations' });
 has _loaded    => (is => 'ro', default => sub { +{} });
 
-sub schema { Mimir::Schema::Builder->new(connection => $_[0]->connection) }
+sub schema { Yggdrasil::Schema::Builder->new(connection => $_[0]->connection) }
 sub repo   { $_[0]->connection->table($_[0]->table) }
 
 sub ensure_repository {

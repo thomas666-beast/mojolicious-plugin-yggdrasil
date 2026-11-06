@@ -1,6 +1,6 @@
-package Mimir::Relation::HasOneOrMany;
+package Yggdrasil::Relation::HasOneOrMany;
 use Moo;
-extends 'Mimir::Relation';
+extends 'Yggdrasil::Relation';
 
 has foreign_key => (is => 'ro', required => 1);   # column on the related table
 has local_key   => (is => 'ro', required => 1);   # column on the parent

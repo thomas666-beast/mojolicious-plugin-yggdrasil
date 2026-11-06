@@ -3,8 +3,8 @@ use warnings;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-  NAME         => 'Mojolicious::Plugin::Mimir',
-  VERSION_FROM => 'lib/Mimir.pm',
+  NAME         => 'Mojolicious::Plugin::Yggdrasil',
+  VERSION_FROM => 'lib/Yggdrasil.pm',
   ABSTRACT     => 'Eloquent-style ORM, query builder and migrations for Mojolicious (SQLite, MySQL, PostgreSQL)',
   LICENSE      => 'perl_5',
   MIN_PERL_VERSION => '5.016',

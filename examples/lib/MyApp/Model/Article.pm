@@ -1,7 +1,7 @@
 package MyApp::Model::Article;
 use Moo;
-extends 'Mimir::Model';
-with 'Mimir::Role::SoftDeletes';
+extends 'Yggdrasil::Model';
+with 'Yggdrasil::Role::SoftDeletes';
 
 sub fillable { [qw(title body published meta)] }
 sub casts    { { published => 'bool', meta => 'json', views => 'int' } }

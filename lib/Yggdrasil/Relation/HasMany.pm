@@ -1,7 +1,7 @@
-package Mimir::Relation::HasMany;
+package Yggdrasil::Relation::HasMany;
 use Moo;
 use Mojo::Collection;
-extends 'Mimir::Relation::HasOneOrMany';
+extends 'Yggdrasil::Relation::HasOneOrMany';
 
 sub results { $_[0]->get }
 

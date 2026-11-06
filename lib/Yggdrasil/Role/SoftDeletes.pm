@@ -1,4 +1,4 @@
-package Mimir::Role::SoftDeletes;
+package Yggdrasil::Role::SoftDeletes;
 use Moo::Role;
 
 sub soft_deletes { 1 }

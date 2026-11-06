@@ -1,4 +1,4 @@
-package Mimir::Paginator;
+package Yggdrasil::Paginator;
 use Moo;
 
 has items        => (is => 'ro', required => 1);
