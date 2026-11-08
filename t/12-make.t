@@ -9,7 +9,8 @@ package main;
 use Yggdrasil; require Mojolicious::Plugin::Yggdrasil::Command::yggdrasil;
 my $home = tempdir(CLEANUP=>1);
 $main::M = Yggdrasil->init(connections=>{default=>{driver=>'sqlite',database=>':memory:'}}, migration_paths=>{default=>["$home/migrations"]}, model_namespaces=>['Blog::Model']);
-my $cmd = Mojolicious::Plugin::Yggdrasil::Command::yggdrasil->new(app => FakeApp->new($home));
+my $app = FakeApp->new($home);   # keep a reference: Mojolicious::Command holds `app` weakly
+my $cmd = Mojolicious::Plugin::Yggdrasil::Command::yggdrasil->new(app => $app);
 sub run { my $o=''; open my $h,'>',\$o; local *STDOUT=$h; $cmd->run(@_); $o }
 my $out = run('make:model','Post','-m','-f','title:string,body:text?,price:decimal(8,2)=0,user_id:foreign,slug:string!,note:string?=hi');
 my $model = do { local (@ARGV,$/)="$home/lib/Blog/Model/Post.pm"; <> };
